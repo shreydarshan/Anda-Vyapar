@@ -1,0 +1,75 @@
+/* ============================================================
+   3D BUTTON SYSTEM
+   Subtle physical-control feel: raised → hover lift → pressed.
+   Applies on top of the existing .btn classes from legacy-base.css
+   ============================================================ */
+
+.btn{
+  position:relative;
+  border-radius:var(--rs);
+  font-family:'Baloo 2',cursive;
+  font-weight:700;
+  cursor:pointer;
+  border:1px solid var(--bdr2);
+  transition:transform .08s ease, box-shadow .08s ease, filter .08s ease;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.6) inset,
+    0 -2px 0 rgba(0,0,0,.06) inset,
+    0 2px 4px rgba(44,26,14,.10);
+}
+.btn:hover{
+  transform:translateY(-1px);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.6) inset,
+    0 -2px 0 rgba(0,0,0,.06) inset,
+    0 4px 8px rgba(44,26,14,.14);
+}
+.btn:active{
+  transform:translateY(1px);
+  box-shadow:
+    0 1px 2px rgba(0,0,0,.12) inset,
+    0 1px 1px rgba(44,26,14,.08);
+  filter:brightness(.97);
+}
+.btn:disabled,
+.btn.disabled{
+  transform:none;
+  filter:grayscale(.3) opacity(.55);
+  box-shadow:none;
+  cursor:not-allowed;
+}
+.btn.bg{ background:linear-gradient(180deg,#26573F,var(--acc)); color:#fff; border-color:var(--acc-dk); }
+.btn.bo{ background:linear-gradient(180deg,#fff,#F6EEE1); color:var(--t1); }
+.btn.bd{ background:linear-gradient(180deg,#FF6B6B,var(--red)); color:#fff; border-color:#A31E1E; }
+.btn.bs{ background:linear-gradient(180deg,#66BB6A,var(--grn)); color:#fff; border-color:#1B5E20; }
+
+/* Order-type / selection buttons get the same physical feel */
+.ord-type-btn{
+  box-shadow:0 1px 0 rgba(255,255,255,.5) inset, 0 2px 3px rgba(44,26,14,.08);
+  transition:transform .08s ease, box-shadow .08s ease;
+}
+.ord-type-btn:hover{ transform:translateY(-1px); }
+.ord-type-btn:active{ transform:translateY(1px); box-shadow:0 1px 2px rgba(0,0,0,.1) inset; }
+.ord-type-btn.active{
+  box-shadow:0 0 0 3px rgba(27,67,50,.15), 0 1px 3px rgba(38,36,31,.12) inset;
+}
+
+/* Keyboard focus ring — always visible, never silently swallowed */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+.ord-type-btn:focus-visible,
+.tab:focus-visible{
+  outline:2px solid var(--acc);
+  outline-offset:2px;
+}
+
+/* Small shortcut hint chip, used next to keyboard-first actions */
+.kbd-hint{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:20px;height:18px;padding:0 5px;margin-left:6px;
+  font-family:'Noto Sans',sans-serif;font-size:10px;font-weight:600;
+  color:var(--t2);background:var(--s2);border:1px solid var(--bdr);
+  border-radius:4px;line-height:1;
+}
+.btn .kbd-hint{ color:rgba(255,255,255,.85); background:rgba(255,255,255,.18); border-color:rgba(255,255,255,.25); }

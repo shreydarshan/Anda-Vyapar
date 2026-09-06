@@ -1,0 +1,99 @@
+/* ============================================================
+   AUTH SCREENS — first thing the user sees
+   ============================================================ */
+#auth-screen{
+  min-height:100vh;
+  display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(circle at 30% 20%, #FFF3E0 0%, var(--bg) 60%);
+  padding:1.5rem;
+}
+.auth-card{
+  width:100%;max-width:380px;
+  background:var(--sur);
+  border:1px solid var(--bdr);
+  border-radius:var(--r);
+  box-shadow:var(--sh2);
+  padding:2rem 1.75rem;
+}
+.auth-brand{ text-align:center; margin-bottom:1.5rem; }
+.auth-brand .aico{ font-size:38px; line-height:1; }
+.auth-brand .atit{ font-family:'Baloo 2',cursive; font-size:22px; font-weight:800; color:var(--t1); margin-top:.25rem; }
+.auth-brand .asub{ font-size:12px; color:var(--t2); margin-top:2px; }
+
+.auth-field{ margin-bottom:1rem; }
+.auth-field label{ display:block; font-size:12px; font-weight:600; color:var(--t2); margin-bottom:4px; }
+.auth-field input{ width:100%; }
+.pw-field{ position:relative; }
+.pw-field input{ padding-right:38px; }
+.pw-toggle{
+  position:absolute; right:4px; top:50%; transform:translateY(-50%);
+  width:30px; height:30px; border:none; background:transparent; cursor:pointer;
+  font-size:15px; display:flex; align-items:center; justify-content:center;
+  color:var(--t3); border-radius:6px;
+}
+.pw-toggle:hover{ background:var(--s2); color:var(--t1); }
+.pw-toggle:focus-visible{ outline:2px solid var(--acc); outline-offset:1px; }
+
+.auth-error{
+  background:var(--rbg); border:1px solid var(--rb); color:var(--red);
+  font-size:12px; border-radius:8px; padding:8px 10px; margin-bottom:1rem;
+  display:none;
+}
+.auth-error.show{ display:block; }
+
+.auth-submit{ width:100%; padding:11px; font-size:14px; margin-top:.25rem; }
+
+.auth-switch{ text-align:center; font-size:12px; color:var(--t2); margin-top:1.1rem; }
+.auth-switch button{
+  background:none;border:none;color:var(--acc);font-weight:700;
+  cursor:pointer;font-family:'Baloo 2',cursive;font-size:12px;padding:0 2px;
+}
+
+.auth-status-banner{
+  margin-top:1rem;font-size:11px;text-align:center;color:var(--t3);
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.auth-status-banner .dot{ width:6px;height:6px;border-radius:50%;background:var(--grn); }
+.auth-status-banner.offline .dot{ background:var(--red); }
+
+/* Offline banner shown inside the authenticated app shell when
+   Supabase is unreachable — never a fatal error screen. */
+.offline-banner{
+  display:none;
+  background:var(--ambg); border-bottom:1px solid #EF9F27;
+  color:var(--amb); font-size:12px; text-align:center;
+  padding:6px 10px; font-family:'Noto Sans',sans-serif;
+}
+.offline-banner.show{ display:block; }
+.offline-banner b{ font-family:'Baloo 2',cursive; }
+
+#app-shell{ display:block; }
+
+.hlink-btn{
+  background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.25);
+  color:#fff; font-family:'Baloo 2',cursive; font-weight:600; font-size:11px;
+  padding:5px 11px; border-radius:16px; cursor:pointer; transition:background .15s;
+}
+.hlink-btn:hover{ background:rgba(255,255,255,.24); }
+
+/* Auth modal (was full-screen, now an overlay like other modals) */
+#auth-modal-bg{
+  position:fixed; inset:0; z-index:200;
+  background:rgba(44,26,14,.6);
+  display:flex; align-items:center; justify-content:center; padding:1.5rem;
+}
+.auth-card{ position:relative; }
+.auth-modal-close{
+  position:absolute; top:10px; right:12px; background:none; border:none;
+  font-size:16px; color:var(--t3); cursor:pointer; line-height:1;
+}
+.auth-modal-close:hover{ color:var(--t1); }
+
+.auth-loading{
+  display:flex;align-items:center;justify-content:center;min-height:100vh;
+  font-family:'Baloo 2',cursive;color:var(--t2);font-size:14px;gap:10px;
+}
+.spin-dot{
+  width:10px;height:10px;border-radius:50%;background:var(--acc);
+  animation:blink .7s infinite;
+}

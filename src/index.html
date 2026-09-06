@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Anda Vyapar — Egg Business</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&family=Noto+Sans:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="css/legacy-base.css"/>
+<link rel="stylesheet" href="css/buttons-3d.css"/>
+<link rel="stylesheet" href="css/auth.css"/>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════
+     AUTH MODAL — optional. Billing is always the first screen;
+     this only opens when the user clicks Login/Sign Up (header)
+     or Logout (Settings). See auth/authUI.js.
+     ══════════════════════════════════════════════════════════ -->
+<div id="auth-modal-bg" class="mbg" style="display:none">
+  <div class="auth-card" id="auth-card">
+    <button type="button" class="auth-modal-close" onclick="closeAuthModal()">✕</button>
+    <div class="auth-brand">
+      <div class="aico">🥚</div>
+      <div class="atit">Anda Vyapar</div>
+      <div class="asub">Egg Business Manager</div>
+    </div>
+
+    <form id="login-form">
+      <div id="login-error" class="auth-error"></div>
+      <div class="auth-field">
+        <label>Email</label>
+        <input type="email" id="login-email" autocomplete="off" required/>
+      </div>
+      <div class="auth-field">
+        <label>Password</label>
+        <div class="pw-field">
+          <input type="password" id="login-password" autocomplete="new-password" required/>
+          <button type="button" class="pw-toggle" tabindex="-1" onclick="togglePwVisibility('login-password',this)" aria-label="Show password">👁</button>
+        </div>
+      </div>
+      <button type="submit" id="login-submit-btn" class="btn bg auth-submit">Login</button>
+      <div class="auth-switch">
+        New here? <button type="button" onclick="switchToSignup()">Create account</button>
+      </div>
+    </form>
+
+    <form id="signup-form" style="display:none">
+      <div id="signup-error" class="auth-error"></div>
+      <div class="auth-field">
+        <label>Name</label>
+        <input type="text" id="signup-name" autocomplete="name"/>
+      </div>
+      <div class="auth-field">
+        <label>Email</label>
+        <input type="email" id="signup-email" autocomplete="username" required/>
+      </div>
+      <div class="auth-field">
+        <label>Password</label>
+        <div class="pw-field">
+          <input type="password" id="signup-password" autocomplete="new-password" required/>
+          <button type="button" class="pw-toggle" tabindex="-1" onclick="togglePwVisibility('signup-password',this)" aria-label="Show password">👁</button>
+        </div>
+      </div>
+      <div class="auth-field">
+        <label>Confirm Password</label>
+        <div class="pw-field">
+          <input type="password" id="signup-confirm" autocomplete="new-password" required/>
+          <button type="button" class="pw-toggle" tabindex="-1" onclick="togglePwVisibility('signup-confirm',this)" aria-label="Show password">👁</button>
+        </div>
+      </div>
+      <button type="submit" id="signup-submit-btn" class="btn bg auth-submit">Create Account</button>
+      <div class="auth-switch">
+        Already have an account? <button type="button" onclick="switchToLogin()">Login</button>
+      </div>
+    </form>
+
+    <div id="guest-data-notice" style="display:none;margin-top:1rem;padding:.7rem;background:var(--ambg);border:1px solid var(--amb);border-radius:8px;font-size:12px;color:var(--amb)">
+      <span id="guest-data-notice-text">You have existing local data on this device.</span>
+      <div style="margin-top:.5rem;display:flex;gap:6px">
+        <button type="button" class="btn bo bsm" onclick="LegacyMigration.keepLocalOnly()">Keep Local Only</button>
+        <button type="button" class="btn bg bsm" onclick="LegacyMigration.importIntoAccount()">Import Into My Account</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     APP SHELL — always visible. Billing is the first screen,
+     with no auth gate. See app/init.js.
+     ══════════════════════════════════════════════════════════ -->
+<div id="app-shell" class="ready">
+<div id="offline-banner" class="offline-banner">
+  <b>Offline</b> — Local billing active, cloud sync paused
+</div>
+<div class="hdr">
+  <div class="hbrand">
+    <div class="hico">🥚</div>
+    <div>
+      <div class="htit" id="htit">Anda Vyapar</div>
+      <div class="hsub" id="hsub">Egg Business Manager</div>
+    </div>
+  </div>
+  <div class="hright">
+    <!-- Auto sync status pill -->
+    <div id="sync-pill" onclick="SyncService.manualSync()" title="Click to force sync" style="display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.25);border-radius:20px;padding:4px 10px;cursor:pointer;transition:background .15s" onmouseover="this.style.background='rgba(255,255,255,.28)'" onmouseout="this.style.background='rgba(255,255,255,.18)'">
+      <span id="sync-dot" style="width:7px;height:7px;border-radius:50%;background:#4CAF50;flex-shrink:0;display:inline-block"></span>
+      <span id="sync-txt" style="font-size:11px;color:#fff;font-family:'Baloo 2',cursive;font-weight:600">Synced</span>
+    </div>
+    <!-- Optional account controls — small and unobtrusive, never a gate -->
+    <div id="guest-controls" style="display:flex;align-items:center;gap:6px">
+      <button class="hlink-btn" onclick="openAuthModal('login')">Login</button>
+      <button class="hlink-btn" onclick="openAuthModal('signup')">Sign Up</button>
+    </div>
+    <div id="account-controls" style="display:none;align-items:center;gap:6px">
+      <span id="auth-user-badge-hdr" style="font-size:11px;color:#fff;opacity:.85;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+      <button class="hlink-btn" onclick="handleLogout()">Logout</button>
+    </div>
+    <!-- Shown instead of guest/account controls when a previous session
+         was found on startup but not auto-entered (spec: app always
+         starts in Local Mode; resuming is one click, not automatic). -->
+    <div id="resume-controls" style="display:none;align-items:center;gap:6px">
+      <button class="hlink-btn" id="resume-label" onclick="resumeSession()" style="font-weight:700"></button>
+      <button class="hlink-btn" onclick="discardResumableSession()" title="Not you? Sign out of this saved session" style="opacity:.75;font-size:10px">Not you?</button>
+    </div>
+    <button class="lbtn" onclick="toggleLang()" id="lbtn">हिं</button>
+    <div class="hdate" id="hdate"></div>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="goTab('rates')" id="tab-rates"><span class="tl" data-e="Rates" data-h="दरें">Rates</span></div>
+  <div class="tab" onclick="goTab('orders')" id="tab-orders"><span class="tl" data-e="Orders" data-h="ऑर्डर">Orders</span> <span class="bc" id="order-count" style="display:none">0</span></div>
+  <div class="tab" onclick="goTab('stock')" id="tab-stock"><span class="tl" data-e="Stock" data-h="स्टॉक">Stock</span></div>
+  <div class="tab" onclick="goTab('udhar')" id="tab-udhar"><span class="tl" data-e="Udhar" data-h="उधार">Udhar</span> <span class="bc" id="udhar-count" style="display:none">0</span></div>
+  <div class="tab" onclick="goTab('report')" id="tab-report"><span class="tl" data-e="Report" data-h="रिपोर्ट">Report</span></div>
+  <div class="tab" onclick="goTab('customers')" id="tab-customers"><span class="tl" data-e="Suppliers" data-h="सप्लायर">Suppliers</span></div>
+  <div class="tab" onclick="goTab('settings')" id="tab-settings"><span class="tl" data-e="Settings" data-h="सेटिंग">Settings</span></div>
+</div>
+
+<div class="main">
+
+<!-- ══ RATES ══ -->
+<div class="page active" id="page-rates">
+  <div class="phdr"><div><h2 class="tl" data-e="Rate Setup" data-h="दर सेटअप">Rate Setup</h2><p class="tl" data-e="Set each unit rate independently — piece, tray and box rates are separate" data-h="तीनों यूनिट की दर अलग-अलग सेट करें">Set each unit rate independently — piece, tray and box rates are separate</p></div></div>
+  <div class="card">
+    <div class="ctit"><span class="cico org">💰</span><span class="tl" data-e="Unit Rates" data-h="यूनिट दरें">Unit Rates</span></div>
+    <div class="rate-grid">
+      <div class="ruc" id="rc-piece">
+        <div class="ruc-tit"><span class="tl" data-e="Per Piece" data-h="प्रति पीस">Per Piece</span></div>
+        <div class="ruc-sub tl" data-e="Normal single egg rate" data-h="एक अंडे की सामान्य दर">Normal single egg rate</div>
+        <label class="tl" data-e="Rate per egg (₹)" data-h="दर प्रति अंडा (₹)">Rate per egg (₹)</label>
+        <input type="number" id="r-piece" placeholder="" min="0" step="0.01"/>
+        <div style="margin-top:8px;display:flex;gap:5px">
+          <button class="btn bg bsm" id="rbtn-piece" onclick="setRate('piece')">✓ <span class="tl" data-e="Set" data-h="सेट">Set</span></button>
+          <button class="btn bo bsm" id="rch-piece" onclick="changeRate('piece')" style="display:none">✎ <span class="tl" data-e="Change" data-h="बदलें">Change</span></button>
+        </div>
+        <div class="rv" id="rv-piece"></div>
+        <div class="rl tl" id="rl-piece" data-e="Rate saved ✓" data-h="दर सेव ✓">Rate saved ✓</div>
+      </div>
+      <div class="ruc" id="rc-tray">
+        <div class="ruc-tit"><span class="tl" data-e="Per Tray" data-h="प्रति ट्रे">Per Tray</span></div>
+        <div class="ruc-sub tl" data-e="Bulk tray rate · 30 eggs" data-h="ट्रे दर · 30 अंडे">Bulk tray rate · 30 eggs</div>
+        <label class="tl" data-e="Rate per tray (₹)" data-h="दर प्रति ट्रे (₹)">Rate per tray (₹)</label>
+        <input type="number" id="r-tray" placeholder="" min="0" step="0.01"/>
+        <div style="margin-top:8px;display:flex;gap:5px">
+          <button class="btn bg bsm" id="rbtn-tray" onclick="setRate('tray')">✓ <span class="tl" data-e="Set" data-h="सेट">Set</span></button>
+          <button class="btn bo bsm" id="rch-tray" onclick="changeRate('tray')" style="display:none">✎ <span class="tl" data-e="Change" data-h="बदलें">Change</span></button>
+        </div>
+        <div class="rv" id="rv-tray"></div>
+        <div class="rl tl" id="rl-tray" data-e="Rate saved ✓" data-h="दर सेव ✓">Rate saved ✓</div>
+      </div>
+      <div class="ruc" id="rc-box">
+        <div class="ruc-tit"><span class="tl" data-e="Per Box" data-h="प्रति बॉक्स">Per Box</span></div>
+        <div class="ruc-sub tl" data-e="Wholesale box rate · 7 trays · 210 eggs" data-h="बॉक्स दर · 7 ट्रे · 210 अंडे">Wholesale · 7 trays · 210 eggs</div>
+        <label class="tl" data-e="Rate per box (₹)" data-h="दर प्रति बॉक्स (₹)">Rate per box (₹)</label>
+        <input type="number" id="r-box" placeholder="" min="0" step="0.01"/>
+        <div style="margin-top:8px;display:flex;gap:5px">
+          <button class="btn bg bsm" id="rbtn-box" onclick="setRate('box')">✓ <span class="tl" data-e="Set" data-h="सेट">Set</span></button>
+          <button class="btn bo bsm" id="rch-box" onclick="changeRate('box')" style="display:none">✎ <span class="tl" data-e="Change" data-h="बदलें">Change</span></button>
+        </div>
+        <div class="rv" id="rv-box"></div>
+        <div class="rl tl" id="rl-box" data-e="Rate saved ✓" data-h="दर सेव ✓">Rate saved ✓</div>
+      </div>
+    </div>
+  </div>
+  <div class="card" id="rate-sum" style="display:none">
+    <div class="ctit"><span class="cico org">📊</span><span class="tl" data-e="Current Rates" data-h="वर्तमान दरें">Current Rates</span></div>
+    <div class="sg">
+      <div class="sc"><div class="sl tl" data-e="Per Piece" data-h="प्रति पीस">Per Piece</div><div class="sv" id="rs-piece">—</div></div>
+      <div class="sc"><div class="sl tl" data-e="Per Tray (30 eggs)" data-h="प्रति ट्रे">Per Tray</div><div class="sv" id="rs-tray">—</div></div>
+      <div class="sc sa"><div class="sl tl" data-e="Per Box (210 eggs)" data-h="प्रति बॉक्स">Per Box</div><div class="sv" id="rs-box">—</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ORDERS ══ -->
+<div class="page" id="page-orders">
+  <div class="card">
+    <div class="ctit"><span class="cico org">➕</span><span class="tl" data-e="New Order" data-h="नया ऑर्डर">New Order</span></div>
+
+    <!-- Customer row -->
+    <div class="row" style="margin-bottom:.85rem">
+      <div class="f" style="min-width:170px">
+        <label><span class="tl" data-e="Customer Name" data-h="ग्राहक का नाम">Customer Name</span> <span id="cname-hint" style="color:var(--t3);font-size:11px">(optional)</span></label>
+        <input type="text" id="cname" list="cdl" oninput="onCnameInput()"/>
+        <datalist id="cdl"></datalist>
+      </div>
+      <div class="f" style="min-width:130px;max-width:190px">
+        <label class="tl" data-e="Phone (optional)" data-h="फ़ोन (वैकल्पिक)">Phone (optional)</label>
+        <input type="text" id="cphone"/>
+      </div>
+      <div class="f" style="min-width:90px;max-width:150px">
+        <label class="tl" data-e="Payment" data-h="भुगतान">Payment</label>
+        <select id="order-udhar" onchange="onUdharChg()">
+          <option value="no">Cash</option>
+          <option value="yes">Udhar</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Customer history panel (appears when name typed) -->
+    <div id="cust-history-panel" style="display:none;margin-bottom:.85rem;background:var(--pbg);border:1px solid var(--pb);border-radius:var(--rs);padding:.75rem 1rem">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:6px;margin-bottom:.6rem">
+        <div style="font-family:'Baloo 2',cursive;font-size:14px;font-weight:700;color:var(--pur)" id="chp-name">—</div>
+        <div id="chp-udhar-badge" style="display:none;background:var(--rbg);border:1px solid var(--rb);border-radius:var(--rs);padding:3px 10px;font-size:12px;color:var(--red);font-weight:600"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px;margin-bottom:.6rem">
+        <div style="background:var(--sur);border-radius:6px;padding:6px 8px;text-align:center">
+          <div style="font-size:10px;color:var(--t3)" class="tl" data-e="Total Orders" data-h="कुल ऑर्डर">Total Orders</div>
+          <div style="font-family:'Baloo 2',cursive;font-size:17px;font-weight:700" id="chp-orders">0</div>
+        </div>
+        <div style="background:var(--sur);border-radius:6px;padding:6px 8px;text-align:center">
+          <div style="font-size:10px;color:var(--t3)" class="tl" data-e="Total Paid" data-h="कुल भुगतान">Total Paid</div>
+          <div style="font-family:'Baloo 2',cursive;font-size:17px;font-weight:700;color:var(--grn)" id="chp-paid">₹0</div>
+        </div>
+        <div style="background:var(--sur);border-radius:6px;padding:6px 8px;text-align:center">
+          <div style="font-size:10px;color:var(--t3)" class="tl" data-e="Last Order" data-h="पिछला ऑर्डर">Last Order</div>
+          <div style="font-size:12px;font-weight:600;color:var(--t1);margin-top:2px" id="chp-last">—</div>
+        </div>
+      </div>
+      <div id="chp-recent" style="font-size:11px;color:var(--t2)"></div>
+    </div>
+
+    <!-- Item type — big buttons like fast bill -->
+    <div style="margin-bottom:.75rem">
+      <label class="tl" style="margin-bottom:8px;display:block" data-e="Item Type" data-h="आइटम प्रकार">Item Type</label>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+        <button class="ord-type-btn active" data-type="box" onclick="ordSetType(this)">
+          <div class="otb-label">BOX</div>
+          <div style="font-family:'Baloo 2',cursive;font-size:13px;font-weight:700" class="tl" data-e="Box" data-h="बॉक्स">Box</div>
+          <div style="font-size:11px;opacity:.7" id="ord-rate-box">210 eggs</div>
+        </button>
+        <button class="ord-type-btn" data-type="tray" onclick="ordSetType(this)">
+          <div class="otb-label">TRAY</div>
+          <div style="font-family:'Baloo 2',cursive;font-size:13px;font-weight:700" class="tl" data-e="Tray" data-h="ट्रे">Tray</div>
+          <div style="font-size:11px;opacity:.7" id="ord-rate-tray">30 eggs</div>
+        </button>
+        <button class="ord-type-btn" data-type="piece" onclick="ordSetType(this)">
+          <div class="otb-label">EGG</div>
+          <div style="font-family:'Baloo 2',cursive;font-size:13px;font-weight:700" class="tl" data-e="Piece" data-h="पीस">Piece</div>
+          <div style="font-size:11px;opacity:.7" id="ord-rate-piece">1 egg</div>
+        </button>
+      </div>
+      <select id="item-type" onchange="updatePrev()" style="display:none">
+        <option value="box">Box</option>
+        <option value="tray">Tray</option>
+        <option value="piece">Piece</option>
+      </select>
+    </div>
+
+    <!-- Qty + Amount + Add -->
+    <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:9px;align-items:flex-end;margin-bottom:.75rem">
+      <div>
+        <label class="tl" data-e="Qty" data-h="मात्रा">Qty</label>
+        <input type="number" id="item-qty" min="1" max="999999" step="1" oninput="updatePrev()"/>
+      </div>
+      <div>
+        <label class="tl" data-e="Amount" data-h="राशि">Amount</label>
+        <div class="pvbox" id="prev-amt" style="font-size:20px">₹ —</div>
+      </div>
+      <div><label style="visibility:hidden">x</label><button class="btn bp" onclick="addItem()">+ <span class="tl" data-e="Add Item" data-h="जोड़ें">Add</span></button></div>
+    </div>
+
+    <p id="nr-warn" style="display:none;font-size:12px;color:var(--red);margin-bottom:7px" class="tl" data-e="Rate not set for this item. Go to Rates tab first." data-h="इस आइटम की दर सेट नहीं है।">Rate not set for this item. Go to Rates tab first.</p>
+    <p id="price-note" style="font-size:11px;color:var(--tel);margin-bottom:5px"></p>
+    <p id="stock-warn" style="display:none;font-size:12px;color:var(--red);margin-bottom:7px"><span id="stock-warn-msg"></span></p>
+
+    <div id="draft-empty" style="text-align:center;padding:.75rem;color:var(--t3);font-size:13px" class="tl" data-e="No items added yet." data-h="कोई आइटम नहीं जोड़ा गया।">No items added yet.</div>
+    <div id="draft-wrap" style="display:none">
+      <div class="tw">
+        <table>
+          <thead><tr><th>#</th><th class="tl" data-e="Item" data-h="आइटम">Item</th><th class="tl" data-e="Qty" data-h="मात्रा">Qty</th><th class="tl" data-e="Eggs" data-h="अंडे">Eggs</th><th class="tl" data-e="Rate" data-h="दर">Rate</th><th class="tl" data-e="Amount" data-h="राशि">Amount</th><th></th></tr></thead>
+          <tbody id="draft-body"></tbody>
+        </table>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:.85rem;padding-top:.85rem;border-top:1px solid var(--bdr);flex-wrap:wrap;gap:8px">
+        <div style="display:flex;gap:14px;font-size:12px;color:var(--t2);flex-wrap:wrap">
+          <span><span class="tl" data-e="Boxes:" data-h="बॉक्स:">Boxes:</span> <strong id="d-box">0</strong></span>
+          <span><span class="tl" data-e="Trays sold:" data-h="ट्रे बेचे:">Trays sold:</span> <strong id="d-tray">0</strong></span>
+          <span><span class="tl" data-e="Pieces sold:" data-h="पीस बेचे:">Pieces sold:</span> <strong id="d-piece">0</strong></span>
+        </div>
+        <div style="font-family:'Baloo 2',cursive;font-size:20px;font-weight:800;color:var(--acc)">₹<span id="d-total">0.00</span></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:9px;justify-content:flex-end;margin-top:.9rem;flex-wrap:wrap">
+      <button class="btn bo bsm" onclick="clearDraft()">✕ <span class="tl" data-e="Clear" data-h="साफ करें">Clear</span></button>
+      <button class="btn bp" id="place-order-btn" onclick="placeOrder()">✓ <span class="tl" data-e="Place Order" data-h="ऑर्डर दें">Place Order</span></button>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.85rem;flex-wrap:wrap;gap:8px">
+      <div class="ctit" style="margin-bottom:0"><span class="cico org">📋</span><span class="tl" data-e="Order History" data-h="ऑर्डर इतिहास">Order History</span></div>
+      <button class="btn br bsm" onclick="clearAllOrders()">🗑 <span class="tl" data-e="Clear All" data-h="सब हटाएं">Clear All</span></button>
+    </div>
+    <div class="sg" id="h-stats" style="display:none">
+      <div class="sc"><div class="sl tl" data-e="Total Orders" data-h="कुल ऑर्डर">Orders</div><div class="sv" id="hs-o">0</div></div>
+      <div class="sc st"><div class="sl tl" data-e="Boxes Sold" data-h="बॉक्स बिके">Boxes Sold</div><div class="sv" id="hs-bx">0</div></div>
+      <div class="sc st"><div class="sl tl" data-e="Trays Sold" data-h="ट्रे बेचे">Trays Sold</div><div class="sv" id="hs-tr">0</div></div>
+      <div class="sc st"><div class="sl tl" data-e="Pieces Sold" data-h="पीस बेचे">Pieces Sold</div><div class="sv" id="hs-pc">0</div></div>
+      <div class="sc sr"><div class="sl tl" data-e="Udhar Pending" data-h="उधार बाकी">Udhar</div><div class="sv" id="hs-p">₹0</div></div>
+      <div class="sc sa"><div class="sl tl" data-e="Revenue" data-h="राजस्व">Revenue</div><div class="sv" id="hs-r">₹0</div></div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:.85rem">
+      <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;flex:1;min-width:200px">
+        <button class="fp active" onclick="setFilt('all')" id="f-all">All</button>
+        <button class="fp" onclick="setFilt('cash')" id="f-cash">Cash</button>
+        <button class="fp" onclick="setFilt('udhar')" id="f-udhar">Udhar</button>
+        <button class="fp" onclick="setFilt('paid')" id="f-paid">Paid</button>
+      </div>
+      <div class="f" style="min-width:160px;flex:1;max-width:220px">
+        <label class="tl" data-e="Search customer / #" data-h="ग्राहक / # खोजें">Search customer / #</label>
+        <input type="text" id="f-search" oninput="setHistSearch(this.value)" placeholder="Name, phone, or order #" style="height:32px;font-size:12px"/>
+      </div>
+      <div style="display:flex;gap:6px;align-items:flex-end;flex-wrap:wrap">
+        <div class="f" style="min-width:90px;flex:0">
+          <label class="tl" data-e="Min ₹" data-h="न्यूनतम ₹">Min ₹</label>
+          <input type="number" id="f-amt-min" min="0" step="1" onchange="histPage=1;renderHist()" style="height:32px;font-size:12px"/>
+        </div>
+        <div class="f" style="min-width:90px;flex:0">
+          <label class="tl" data-e="Max ₹" data-h="अधिकतम ₹">Max ₹</label>
+          <input type="number" id="f-amt-max" min="0" step="1" onchange="histPage=1;renderHist()" style="height:32px;font-size:12px"/>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;align-items:flex-end;flex-wrap:wrap">
+        <div class="f" style="min-width:130px;flex:0">
+          <label class="tl" data-e="From Date" data-h="तारीख से">From Date</label>
+          <input type="date" id="f-from" onchange="histPage=1;renderHist()" style="height:32px;font-size:12px"/>
+        </div>
+        <div class="f" style="min-width:130px;flex:0">
+          <label class="tl" data-e="To Date" data-h="तारीख तक">To Date</label>
+          <input type="date" id="f-to" onchange="histPage=1;renderHist()" style="height:32px;font-size:12px"/>
+        </div>
+        <button class="btn bo bsm" style="height:32px" onclick="clearDateFilt()" id="clr-date">Clear</button>
+      </div>
+      <!-- Date-range validation warning (spec: never silently roll an
+           impossible calendar date like 31 Sept into another date —
+           show a clear message and don't filter by it). Hidden unless
+           an invalid date is actually detected. -->
+      <div id="h-date-warn" style="display:none;margin-top:6px;font-size:12px;color:var(--red);background:var(--rbg);border:1px solid var(--rb);border-radius:6px;padding:6px 10px"></div>
+    </div>
+    <div id="h-empty" class="empty"><div class="ei">📋</div><p class="tl" data-e="No orders yet. Place your first order above!" data-h="कोई ऑर्डर नहीं।">No orders yet. Place your first order above!</p></div>
+    <div id="h-wrap" style="display:none">
+      <div class="tw">
+        <table>
+          <thead><tr>
+            <th>#</th>
+            <th class="tl" data-e="Customer" data-h="ग्राहक">Customer</th>
+            <th class="tl" data-e="Date & Time" data-h="तारीख">Date & Time</th>
+            <th class="tl" data-e="Items" data-h="आइटम">Items</th>
+            <th class="tl" data-e="Boxes / Trays / Pcs" data-h="बॉक्स/ट्रे/पीस">Boxes / Trays / Pcs</th>
+            <th class="tl" data-e="Amount" data-h="राशि">Amount</th>
+            <th class="tl" data-e="Type" data-h="प्रकार">Type</th>
+            <th class="tl" data-e="Slip" data-h="पर्ची">Slip</th>
+          </tr></thead>
+          <tbody id="h-body"></tbody>
+        </table>
+      </div>
+      <div id="h-pager"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ STOCK ══ -->
+<div class="page" id="page-stock">
+  <div class="phdr"><div><h2 class="tl" data-e="Stock & Inventory" data-h="स्टॉक">Stock & Inventory</h2><p class="tl" data-e="Track your egg stock. Add when received, auto-deducts on orders." data-h="स्टॉक ट्रैक करें। ऑर्डर पर अपने आप घटेगा।">Track your egg stock. Add when received, auto-deducts on orders.</p></div></div>
+  <div class="stock-grid">
+    <div class="stk-card box-card" id="stk-box-card">
+      <div class="stk-label tl" data-e="BOXES IN STOCK" data-h="बॉक्स स्टॉक में">BOXES IN STOCK</div>
+      <div class="stk-val" id="stk-box-val">0</div>
+      <div class="stk-sub">1 box = 7 trays = 210 eggs</div>
+    </div>
+    <div class="stk-card tray-card" id="stk-tray-card">
+      <div class="stk-label tl" data-e="TRAYS IN STOCK" data-h="ट्रे स्टॉक में">TRAYS IN STOCK</div>
+      <div class="stk-val" id="stk-tray-val">0</div>
+      <div class="stk-sub">1 tray = 30 eggs</div>
+    </div>
+    <div class="stk-card piece-card" id="stk-piece-card">
+      <div class="stk-label tl" data-e="LOOSE PIECES" data-h="खुले अंडे">LOOSE PIECES</div>
+      <div class="stk-val" id="stk-piece-val">0</div>
+      <div class="stk-sub tl" data-e="individual eggs" data-h="अलग-अलग अंडे">individual eggs</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ctit"><span class="cico grn">➕</span><span class="tl" data-e="Add Stock Received" data-h="स्टॉक जोड़ें">Add Stock Received</span></div>
+    <div class="stock-adj">
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--t2);margin-bottom:.6rem" class="tl" data-e="Add by unit" data-h="यूनिट से जोड़ें">Add by unit</div>
+        <div class="row" style="margin-bottom:.6rem">
+          <div class="f"><label class="tl" data-e="Boxes" data-h="बॉक्स">Boxes</label><input type="number" id="add-box" min="0" max="999999" step="1"/></div>
+          <div class="f"><label class="tl" data-e="Trays" data-h="ट्रे">Trays</label><input type="number" id="add-tray" min="0" max="999999" step="1"/></div>
+          <div class="f"><label class="tl" data-e="Pieces" data-h="पीस">Pieces</label><input type="number" id="add-piece" min="0" max="999999" step="1"/></div>
+        </div>
+        <button class="btn bg" onclick="addStock()">+ <span class="tl" data-e="Add to Stock" data-h="स्टॉक में जोड़ें">Add to Stock</span></button>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--t2);margin-bottom:.6rem" class="tl" data-e="Manual Removal / Adjust" data-h="मैन्युअल घटाएं">Manual Removal / Adjust</div>
+        <div class="row" style="margin-bottom:.6rem">
+          <div class="f"><label class="tl" data-e="Boxes" data-h="बॉक्स">Boxes</label><input type="number" id="rem-box" min="0" max="999999" step="1"/></div>
+          <div class="f"><label class="tl" data-e="Trays" data-h="ट्रे">Trays</label><input type="number" id="rem-tray" min="0" max="999999" step="1"/></div>
+          <div class="f"><label class="tl" data-e="Pieces" data-h="पीस">Pieces</label><input type="number" id="rem-piece" min="0" max="999999" step="1"/></div>
+        </div>
+        <button class="btn br" onclick="removeStock()">− <span class="tl" data-e="Remove from Stock" data-h="स्टॉक से घटाएं">Remove from Stock</span></button>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.85rem;flex-wrap:wrap;gap:8px">
+      <div class="ctit" style="margin-bottom:0"><span class="cico tel">📋</span><span class="tl" data-e="Stock Log" data-h="स्टॉक लॉग">Stock Log</span></div>
+      <button class="btn bo bsm" onclick="clearStockLog()"><span class="tl" data-e="Clear Log" data-h="लॉग साफ करें">Clear Log</span></button>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:.85rem">
+      <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">
+        <button class="fp active" id="sl-all" onclick="setStockLogType('all')">All</button>
+        <button class="fp" id="sl-in" onclick="setStockLogType('IN')">IN</button>
+        <button class="fp" id="sl-out" onclick="setStockLogType('OUT')">OUT</button>
+      </div>
+      <div class="f" style="min-width:160px;flex:1;max-width:220px">
+        <label class="tl" data-e="Search note" data-h="नोट खोजें">Search note</label>
+        <input type="text" id="sl-search" oninput="setStockLogSearch(this.value)" placeholder="e.g. Order #, supplier name" style="height:32px;font-size:12px"/>
+      </div>
+      <div style="display:flex;gap:6px;align-items:flex-end;flex-wrap:wrap">
+        <div class="f" style="min-width:130px;flex:0">
+          <label class="tl" data-e="From Date" data-h="तारीख से">From Date</label>
+          <input type="date" id="sl-from" onchange="setStockLogDates()" style="height:32px;font-size:12px"/>
+        </div>
+        <div class="f" style="min-width:130px;flex:0">
+          <label class="tl" data-e="To Date" data-h="तारीख तक">To Date</label>
+          <input type="date" id="sl-to" onchange="setStockLogDates()" style="height:32px;font-size:12px"/>
+        </div>
+        <button class="btn bo bsm" style="height:32px" onclick="clearStockLogDates()">Clear</button>
+      </div>
+    </div>
+    <div id="stk-log-empty" class="empty" style="padding:1.5rem"><div class="ei">📋</div><p class="tl" data-e="No stock movements yet." data-h="कोई स्टॉक मूवमेंट नहीं।">No stock movements yet.</p></div>
+    <div id="stk-log-wrap" style="display:none">
+      <div class="tw"><table>
+        <thead><tr><th class="tl" data-e="Date" data-h="तारीख">Date</th><th class="tl" data-e="Type" data-h="प्रकार">Type</th><th class="tl" data-e="Note" data-h="नोट">Note</th><th class="tl" data-e="Boxes" data-h="बॉक्स">Boxes</th><th class="tl" data-e="Trays" data-h="ट्रे">Trays</th><th class="tl" data-e="Pieces" data-h="पीस">Pieces</th><th></th></tr></thead>
+        <tbody id="stk-log-body"></tbody>
+      </table></div>
+      <div id="stk-log-pager"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ UDHAR ══ -->
+<div class="page" id="page-udhar">
+  <div class="phdr"><div><h2 class="tl" data-e="Udhar Book" data-h="उधार बही">Udhar Book</h2><p class="tl" data-e="Track credit given to customers. Auto-populated from Udhar orders." data-h="उधार दिए ग्राहकों का हिसाब।">Track credit. Auto-populated from Udhar orders.</p></div></div>
+  <div class="sg">
+    <div class="sc spu"><div class="sl tl" data-e="Customers with Udhar" data-h="उधार ग्राहक">With Udhar</div><div class="sv" id="u-cnt">0</div></div>
+    <div class="sc sr"><div class="sl tl" data-e="Total Pending" data-h="कुल बकाया">Total Pending</div><div class="sv" id="u-tot">₹0</div></div>
+  </div>
+  <div class="card">
+    <div class="ctit"><span class="cico pur">🔍</span><span class="tl" data-e="Search Udhar" data-h="उधार खोजें">Search Udhar</span></div>
+    <div class="srch-wrap">
+      <span class="srch-ico">🔍</span>
+      <input type="text" id="u-search" oninput="onUdharSearchInput()"/>
+    </div>
+    <div class="divider"></div>
+    <div class="ctit" style="margin-bottom:.7rem"><span class="cico pur">➕</span><span class="tl" data-e="Add Manual Udhar Entry" data-h="मैन्युअल उधार जोड़ें">Add Manual Udhar Entry</span></div>
+    <div class="row">
+      <div class="f" style="min-width:150px"><label class="tl" data-e="Customer Name *" data-h="ग्राहक नाम *">Customer Name *</label><input type="text" id="u-cname" list="udl"/><datalist id="udl"></datalist></div>
+      <div class="f" style="min-width:110px;max-width:160px"><label class="tl" data-e="Amount (₹)" data-h="राशि (₹)">Amount (₹)</label><input type="number" id="u-amt" min="0" step="0.01"/></div>
+      <div class="f" style="min-width:150px"><label class="tl" data-e="Item details (optional)" data-h="आइटम विवरण (वैकल्पिक)">Item details (optional)</label><input type="text" id="u-note"/></div>
+      <div style="display:flex;align-items:flex-end"><button class="btn bp" onclick="addUdhar()">+ <span class="tl" data-e="Add" data-h="जोड़ें">Add</span></button></div>
+    </div>
+  </div>
+  <div id="u-empty" class="empty"><div class="ei">📒</div><p class="tl" data-e="No udhar entries yet." data-h="कोई उधार नहीं।">No udhar entries yet.</p></div>
+  <div id="u-list"></div>
+</div>
+
+<!-- ══ REPORT ══ -->
+<div class="page" id="page-report">
+  <div class="phdr"><div><h2 class="tl" data-e="Daily Report" data-h="दैनिक रिपोर्ट">Daily Report</h2><p class="tl" data-e="Day-wise sales with boxes sold, trays sold and pieces sold." data-h="दिन के हिसाब से बिक्री।">Day-wise sales with boxes sold, trays sold and pieces sold.</p></div></div>
+  <div class="sg">
+    <div class="sc"><div class="sl tl" data-e="Active Days" data-h="कुल दिन">Active Days</div><div class="sv" id="rp-days">0</div></div>
+    <div class="sc st"><div class="sl tl" data-e="Boxes Sold" data-h="बॉक्स बेचे">Boxes Sold</div><div class="sv" id="rp-box">0</div></div>
+    <div class="sc st"><div class="sl tl" data-e="Trays Sold" data-h="ट्रे बेचे">Trays Sold</div><div class="sv" id="rp-tray">0</div></div>
+    <div class="sc st"><div class="sl tl" data-e="Pieces Sold" data-h="पीस बेचे">Pieces Sold</div><div class="sv" id="rp-piece">0</div></div>
+    <div class="sc sa"><div class="sl tl" data-e="Total Revenue" data-h="कुल कमाई">Revenue</div><div class="sv" id="rp-rev">₹0</div></div>
+  </div>
+  <div id="rp-empty" class="empty"><div class="ei">📊</div><p class="tl" data-e="No data yet. Place some orders!" data-h="कोई डेटा नहीं।">No data yet. Place some orders!</p></div>
+  <div id="rp-list"></div>
+</div>
+
+<!-- ══ SETTINGS ══ -->
+<div class="page" id="page-settings">
+  <div class="phdr"><div><h2 class="tl" data-e="Settings" data-h="सेटिंग">Settings</h2><p class="tl" data-e="Shop details, printer, account and backups." data-h="दुकान, प्रिंटर, अकाउंट और बैकअप।">Shop details, printer, account and backups.</p></div></div>
+
+  <!-- ELECTRON DATA FOLDER PANEL (only visible in desktop app) -->
+  <div id="electron-data-note" style="display:none;margin-bottom:1rem">
+    <div style="background:linear-gradient(135deg,#1B5E20,#2E7D32);border-radius:var(--r);padding:1.25rem 1.5rem;color:#fff">
+      <div style="font-family:'Baloo 2',cursive;font-size:16px;font-weight:800;margin-bottom:.25rem">💾 Desktop App — File Storage Active</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.75);margin-bottom:.9rem">Your data is saved automatically to your computer's hard drive. No internet needed.</div>
+      <div style="background:rgba(0,0,0,.25);border-radius:var(--rs);padding:.6rem .9rem;font-size:12px;font-family:monospace;color:#A5D6A7;margin-bottom:.9rem;word-break:break-all" id="data-folder-path">Loading...</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button id="electron-folder-btn" class="btn" style="display:none;background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.3);color:#fff" onclick="openDataFolder()">📂 Open Data Folder</button>
+        <button id="electron-export-btn" class="btn" style="display:none;background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.3);color:#fff" onclick="doElectronExport()">📤 Export Backup</button>
+        <button id="electron-import-btn" class="btn" style="display:none;background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.3);color:#fff" onclick="doElectronImport()">📥 Import Backup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACCOUNT -->
+  <div class="card">
+    <div class="ctit"><span class="cico org">👤</span><span class="tl" data-e="Account" data-h="खाता">Account</span></div>
+    <div class="row" style="align-items:center">
+      <div class="f" style="min-width:220px">
+        <label class="tl" data-e="Signed in as" data-h="साइन इन">Signed in as</label>
+        <div id="auth-user-badge" style="font-weight:700;padding:8px 0">—</div>
+      </div>
+      <button class="btn bd" id="settings-logout-btn" onclick="handleLogout()" style="display:none">
+        <span class="tl" data-e="Log out" data-h="लॉगआउट">Log out</span>
+      </button>
+      <button class="btn bg" id="settings-login-btn" onclick="openAuthModal('login')">
+        <span class="tl" data-e="Login / Sign Up" data-h="लॉगिन / साइन अप">Login / Sign Up</span>
+      </button>
+    </div>
+    <p style="font-size:11px;color:var(--t3);margin-top:.5rem" class="tl"
+       data-e="Your business data is scoped to your account and protected by Supabase Row Level Security — no other user can see it."
+       data-h="आपका डेटा सिर्फ आपके अकाउंट से जुड़ा है।">
+      Your business data is scoped to your account and protected by Supabase Row Level Security — no other user can see it.
+    </p>
+  </div>
+
+  <!-- PRINTER -->
+  <div class="card">
+    <div class="ctit"><span class="cico org">🖨️</span><span class="tl" data-e="Printer" data-h="प्रिंटर">Printer</span></div>
+    <div class="row">
+      <div class="f" style="min-width:220px">
+        <label class="tl" data-e="Thermal Printer" data-h="प्रिंटर">Thermal Printer</label>
+        <select id="printer-select" onchange="PrinterSettings.save()"></select>
+      </div>
+      <div style="display:flex;align-items:flex-end">
+        <button class="btn bo" onclick="PrinterSettings.testPrint()">
+          <span class="tl" data-e="Test Print" data-h="टेस्ट प्रिंट">Test Print</span>
+        </button>
+      </div>
+    </div>
+    <div class="row" style="margin-top:.6rem">
+      <div class="f" style="max-width:140px">
+        <label class="tl" data-e="Printable Width (mm)" data-h="छपने योग्य चौड़ाई (mm)">Printable Width (mm)</label>
+        <input type="number" id="printer-printable-width" min="30" max="80" onchange="PrinterSettings.saveLayout()"/>
+      </div>
+      <div class="f" style="max-width:140px">
+        <label class="tl" data-e="Left Margin (mm)" data-h="बायाँ मार्जिन (mm)">Left Margin (mm)</label>
+        <input type="number" id="printer-left-margin" min="-10" max="10" step="0.5" onchange="PrinterSettings.saveLayout()"/>
+      </div>
+    </div>
+    <p style="font-size:11px;color:var(--t3);margin-top:.5rem" class="tl"
+       data-e="Select your installed H80i / 80mm thermal printer. Printing uses Electron's native pipeline — no browser zoom or scaling needed. If receipts print shifted on your physical printer, nudge Left Margin (try -2 or +2) and Test Print again — this is often a printer driver offset, not the app."
+       data-h="अपना 80mm थर्मल प्रिंटर चुनें।">
+      Select your installed H80i / 80mm thermal printer. Printing uses Electron's native pipeline — no browser zoom or scaling needed. If receipts print shifted on your physical printer, nudge Left Margin (try -2 or +2) and Test Print again — this is often a printer driver offset, not the app.
+    </p>
+    <div class="row" style="margin-top:.6rem;align-items:center">
+      <label style="display:flex;align-items:center;gap:.4rem;font-size:13px;cursor:pointer">
+        <input type="checkbox" id="printer-show-dialog" onchange="PrinterSettings.save()"/>
+        <span class="tl" data-e="Show the Windows print dialog instead of printing silently" data-h="साइलेंट की जगह विंडोज़ प्रिंट डायलॉग दिखाएँ">Show the Windows print dialog instead of printing silently</span>
+      </label>
+    </div>
+    <p style="font-size:11px;color:var(--t3);margin-top:.5rem" class="tl"
+       data-e="Off (default): every finalized bill prints automatically to the printer above — fastest for high-volume billing. On: a Windows print dialog opens for every bill so you can pick the printer, print to PDF, or cancel — slower, but useful if you don't have a dedicated thermal printer set up yet."
+       data-h="बंद (डिफ़ॉल्ट): हर बिल अपने आप ऊपर वाले प्रिंटर पर प्रिंट होगा। चालू: हर बिल के लिए विंडोज़ डायलॉग खुलेगा।">
+      Off (default): every finalized bill prints automatically to the printer above — fastest for high-volume billing. On: a Windows print dialog opens for every bill so you can pick the printer, print to PDF, or cancel — slower, but useful if you don't have a dedicated thermal printer set up yet.
+    </p>
+  </div>
+
+  <!-- SHOP DETAILS -->
+  <div class="card">
+    <div class="ctit"><span class="cico org">🏪</span><span class="tl" data-e="Shop Details (shown on slips)" data-h="दुकान का विवरण">Shop Details (shown on slips)</span></div>
+    <div class="row">
+      <div class="f" style="min-width:170px"><label class="tl" data-e="Shop Name" data-h="दुकान का नाम">Shop Name</label><input type="text" id="sh-name" oninput="saveShop()"/></div>
+      <div class="f" style="min-width:130px;max-width:190px"><label class="tl" data-e="Phone" data-h="फ़ोन">Phone</label><input type="text" id="sh-phone" oninput="saveShop()"/></div>
+      <div class="f" style="min-width:170px"><label class="tl" data-e="Address" data-h="पता">Address</label><input type="text" id="sh-addr" oninput="saveShop()"/></div>
+      <div class="f" style="min-width:130px;max-width:160px">
+        <label class="tl" data-e="Printer Width" data-h="प्रिंटर साइज़">Printer Width</label>
+        <select id="sh-paper-width" onchange="saveShop()">
+          <option value="58">58mm</option>
+          <option value="80">80mm</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- OFFLINE QUEUE STATUS -->
+  <div class="card" id="offline-queue-card">
+    <div class="ctit"><span class="cico org">📡</span><span class="tl" data-e="Offline Queue & Sync Status" data-h="ऑफलाइन कतार">Offline Queue & Sync Status</span></div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:.75rem;flex-wrap:wrap">
+      <div id="conn-status-badge" style="display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;background:var(--gbg);border:1px solid var(--gb)">
+        <span id="conn-dot" style="width:8px;height:8px;border-radius:50%;background:var(--grn);flex-shrink:0"></span>
+        <span id="conn-label" style="font-size:12px;font-weight:600;color:var(--grn);font-family:'Baloo 2',cursive" class="tl" data-e="Online — Synced" data-h="ऑनलाइन — सिंक हो गया">Online — Synced</span>
+      </div>
+      <div style="font-size:12px;color:var(--t2)"><span class="tl" data-e="Pending:" data-h="बाकी:">Pending:</span> <strong id="queue-count-display">0</strong> <span class="tl" data-e="actions" data-h="क्रियाएं">actions</span></div>
+    </div>
+    <div id="queue-list-display" style="display:none;max-height:120px;overflow-y:auto;margin-bottom:.75rem"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn bg" onclick="SyncService.manualSync()"><span class="tl" data-e="Sync Now" data-h="अभी सिंक करें">Sync Now</span></button>
+      <button class="btn bo" onclick="SyncQueue.clear();renderQueueDisplay();">🗑 <span class="tl" data-e="Clear Queue" data-h="कतार साफ करें">Clear Queue</span></button>
+    </div>
+  </div>
+
+  <!-- BACKUP CONTROLS -->
+  <div class="card">
+    <div class="ctit"><span class="cico org">💾</span><span class="tl" data-e="Backup & Restore" data-h="बैकअप">Backup & Restore</span></div>
+    <div class="row">
+      <button class="btn bg" onclick="SyncService.manualSync()"><span class="tl" data-e="Sync Now to Cloud" data-h="अभी क्लाउड में सेव करें">Sync Now</span></button>
+      <button class="btn bo" onclick="exportJSON()"><span class="tl" data-e="Export JSON" data-h="JSON एक्सपोर्ट">Export JSON</span></button>
+      <button class="btn bo" onclick="doElectronImport()"><span class="tl" data-e="Import JSON" data-h="JSON आयात">Import JSON</span></button>
+    </div>
+    <p style="font-size:12px;color:var(--t3);margin-top:.75rem">
+      <span class="tl" data-e="Auto-saves locally on every action. Cloud syncs in background. Daily backup at midnight." data-h="हर काम पर लोकल सेव। क्लाउड बैकग्राउंड में सिंक। रोज रात को बैकअप।">Auto-saves locally on every action. Cloud syncs in background. Daily backup at midnight.</span>
+    </p>
+    <div style="margin-top:.75rem;padding:.6rem .9rem;background:var(--gbg);border-radius:var(--rs);border:1px solid var(--gb);font-size:12px">
+      <strong class="tl" data-e="Last backup:" data-h="पिछला बैकअप:">Last backup:</strong> <span id="last-backup-time" style="color:var(--grn)">—</span>
+    </div>
+  </div>
+
+  <!-- DANGER ZONE -->
+  <div class="card" style="border-color:var(--rb)">
+    <div class="ctit"><span class="cico org tl" data-e="Danger Zone" data-h="खतरा क्षेत्र">Danger Zone</span></div>
+    <p style="font-size:12px;color:var(--t3);margin-bottom:.6rem" class="tl"
+       data-e="Clears this device's local data only (orders, stock, udhar, suppliers, rates, shop details) for the current account (Guest or signed-in). Your cloud data, if any, is never touched by this."
+       data-h="यह सिर्फ इस डिवाइस का लोकल डेटा हटाता है। क्लाउड डेटा प्रभावित नहीं होता।">
+      Clears this device's local data only (orders, stock, udhar, suppliers, rates, shop details) for the current account (Guest or signed-in). Your cloud data, if any, is never touched by this.
+    </p>
+    <button class="btn bd" onclick="resetLocalWorkspace()">
+      <span class="tl" data-e="Reset Local Workspace" data-h="लोकल डेटा रीसेट करें">Reset Local Workspace</span>
+    </button>
+    <!-- Only meaningful — and only shown — when signed in. This is a
+         genuinely different, more destructive action than the local
+         reset above: it deletes the account's rows from the cloud
+         database too, not just this device's local copy. Kept
+         visually and functionally separate on purpose. -->
+    <div id="delete-cloud-section" style="display:none;margin-top:1rem;padding-top:1rem;border-top:1px dashed var(--rb)">
+      <p style="font-size:12px;color:var(--red);font-weight:700;margin-bottom:.5rem" class="tl"
+         data-e="This permanently deletes this account's business data from BOTH this device and the cloud. This cannot be undone."
+         data-h="यह इस खाते का सारा डेटा डिवाइस और क्लाउड दोनों से हमेशा के लिए मिटा देगा। इसे पूर्ववत नहीं किया जा सकता।">
+        This permanently deletes this account's business data from BOTH this device and the cloud. This cannot be undone.
+      </p>
+      <button class="btn bd" onclick="deleteCloudAccountData()">
+        <span class="tl" data-e="Delete Cloud Data" data-h="क्लाउड डेटा हटाएं">Delete Cloud Data</span>
+      </button>
+    </div>
+  </div>
+</div><!-- /page-settings -->
+
+<!-- Delete Cloud Data confirmation modal — a plain confirm() isn't
+     enough for something this destructive; requires typing RESET,
+     matching the exact phrasing the spec asked for. -->
+<div class="mbg" id="delete-cloud-modal" style="display:none">
+  <div class="modal" style="max-width:420px">
+    <div class="mtit"><span style="color:var(--red)" class="tl" data-e="Delete Cloud Data" data-h="क्लाउड डेटा हटाएं">Delete Cloud Data</span><button class="mcls" onclick="closeDeleteCloudModal()">✕</button></div>
+    <p style="font-size:13px;color:var(--t2);margin-bottom:.75rem">
+      <span class="tl"
+        data-e="This permanently deletes this account's business data from this device and cloud. This cannot be undone."
+        data-h="यह इस खाते का सारा डेटा डिवाइस और क्लाउड से हमेशा के लिए मिटा देगा।">
+        This permanently deletes this account's business data from this device and cloud. This cannot be undone.
+      </span>
+    </p>
+    <p style="font-size:12px;color:var(--t3);margin-bottom:.4rem">
+      <span class="tl" data-e="Type RESET to continue:" data-h="जारी रखने के लिए RESET टाइप करें:">Type RESET to continue:</span>
+    </p>
+    <input type="text" id="delete-cloud-confirm-input" autocomplete="off" style="width:100%;margin-bottom:1rem" oninput="document.getElementById('delete-cloud-confirm-btn').disabled=(this.value.trim()!=='RESET')"/>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn bo" onclick="closeDeleteCloudModal()"><span class="tl" data-e="Cancel" data-h="रद्द करें">Cancel</span></button>
+      <button class="btn bd" id="delete-cloud-confirm-btn" disabled onclick="confirmDeleteCloudAccountData()"><span class="tl" data-e="Delete Permanently" data-h="स्थायी रूप से हटाएं">Delete Permanently</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CUSTOMERS PAGE ══ -->
+<div class="page" id="page-customers">
+  <div class="phdr"><div><h2 class="tl" data-e="Supplier Ledger" data-h="सप्लायर खाता">Supplier Ledger</h2><p class="tl" data-e="Record purchases from suppliers. Rate is always per egg. Buying auto-updates stock." data-h="सप्लायर से खरीद दर्ज करें। दर प्रति अंडा है। स्टॉक अपने आप बढ़ेगा।">Record purchases. Rate is per egg. Buying auto-updates stock.</p></div></div>
+
+  <!-- Summary stats — "You Owe" is clickable -->
+  <div class="sg">
+    <div class="sc spu"><div class="sl tl" data-e="Total Suppliers" data-h="कुल सप्लायर">Suppliers</div><div class="sv" id="cust-count">0</div></div>
+    <div class="sc sr" id="cust-owe-card" onclick="toggleCustOweFilter()" style="cursor:pointer;user-select:none" title="Click to filter by pending">
+      <div class="sl" style="display:flex;align-items:center;gap:4px"><span class="tl" data-e="You Owe (click to filter)" data-h="आपका बकाया (क्लिक करें)">You Owe ▾</span></div>
+      <div class="sv" id="cust-owe">₹0</div>
+    </div>
+    <div class="sc sg2"><div class="sl tl" data-e="Total Boxes Purchased" data-h="कुल बॉक्स खरीदे">Boxes Bought</div><div class="sv" id="cust-boxes">0</div></div>
+  </div>
+
+  <!-- Search bar -->
+  <div class="srch-wrap">
+    <span class="srch-ico">🔍</span>
+    <input type="text" id="cp-search" oninput="onCpSearchInput()" placeholder="Search supplier..."/>
+  </div>
+
+  <!-- Filter pill (hidden by default, shown when You Owe clicked) -->
+  <div id="cust-owe-filter-bar" style="display:none;margin-bottom:.85rem;padding:.6rem .9rem;background:var(--rbg);border:1px solid var(--rb);border-radius:var(--rs);font-size:12px;color:var(--red);display:none;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
+    <span class="tl" data-e="Showing only suppliers with pending balance" data-h="केवल बकाया वाले सप्लायर">Showing only suppliers with pending balance</span>
+    <button class="btn br bsm" onclick="clearCustOweFilter()" style="height:24px;padding:0 8px;font-size:11px"><span class="tl" data-e="Show All" data-h="सब दिखाएं">Show All</span></button>
+  </div>
+
+  <!-- Add new transaction -->
+  <div class="card">
+    <div class="ctit"><span class="cico org">➕</span><span class="tl" data-e="Add Purchase Entry" data-h="खरीद एंट्री जोड़ें">Add Purchase Entry</span></div>
+    <div class="row" style="margin-bottom:.85rem">
+      <div class="f" style="min-width:170px">
+        <label class="tl" data-e="Supplier Name *" data-h="सप्लायर का नाम *">Supplier Name *</label>
+        <input type="text" id="cp-name" list="cp-datalist"/>
+        <datalist id="cp-datalist"></datalist>
+      </div>
+      <div class="f" style="min-width:130px;max-width:190px">
+        <label class="tl" data-e="Phone (optional)" data-h="फ़ोन (वैकल्पिक)">Phone (optional)</label>
+        <input type="text" id="cp-phone"/>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:9px;align-items:flex-end;flex-wrap:wrap">
+      <div>
+        <label class="tl" data-e="Item Type" data-h="आइटम प्रकार">Item Type</label>
+        <select id="cp-type" onchange="calcCpAmt()">
+          <option value="box">Box (210 eggs)</option>
+          <option value="tray">Tray (30 eggs)</option>
+          <option value="piece">Piece (1 egg)</option>
+        </select>
+      </div>
+      <div>
+        <label class="tl" data-e="Qty" data-h="मात्रा">Qty</label>
+        <input type="number" id="cp-qty" min="1" max="999999" step="1" oninput="calcCpAmt()"/>
+        <div class="tl" style="font-size:10px;color:var(--t3);margin-top:2px" data-e="Max 9,99,999" data-h="अधिकतम 9,99,999">Max 9,99,999</div>
+      </div>
+      <div>
+        <label class="tl" data-e="Rate per EGG (₹)" data-h="दर प्रति अंडा (₹)">Rate per Egg (₹)</label>
+        <input type="number" id="cp-rate" min="0" max="9999" step="0.001" oninput="calcCpAmt()"/>
+        <div class="tl" style="font-size:10px;color:var(--t3);margin-top:2px" data-e="₹0.01 – ₹9,999" data-h="₹0.01 – ₹9,999">₹0.01 – ₹9,999</div>
+      </div>
+      <div>
+        <label class="tl" data-e="Total Amount" data-h="कुल राशि">Total Amount</label>
+        <div class="pvbox" id="cp-preview">₹ —</div>
+        <div id="cp-preview-detail" style="font-size:11px;color:var(--t3);margin-top:2px"></div>
+      </div>
+      <div>
+        <label style="visibility:hidden">x</label>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn bp" onclick="addCustPurchase(false)">✓ <span class="tl" data-e="Paid" data-h="भुगतान किया">Paid</span></button>
+          <button class="btn bpu" onclick="addCustPurchase(true)">⏳ <span class="tl" data-e="Credit" data-h="उधार">Credit</span></button>
+        </div>
+      </div>
+    </div>
+    <p id="cp-warn" style="display:none;font-size:12px;color:var(--red);margin-top:7px" class="tl" data-e="Fill supplier name, qty and rate per egg." data-h="सप्लायर नाम, मात्रा और दर प्रति अंडा भरें।">Fill supplier name, qty and rate per egg.</p>
+    <div style="margin-top:.75rem;padding:.6rem .9rem;background:var(--gbg);border-radius:var(--rs);border:1px solid var(--gb);font-size:12px;color:var(--grn)">
+      <strong>Note:</strong> Rate is always per egg. e.g. 100 boxes @ ₹7.66/egg = ₹<span id="cp-eg-amt">—</span>. Buying adds to stock automatically.
+    </div>
+  </div>
+
+  <div id="cust-pg-empty" class="empty"><div class="ei">👥</div><p class="tl" data-e="No supplier entries yet." data-h="कोई सप्लायर नहीं।">No supplier entries yet.</p></div>
+  <div id="cust-pg-list"></div>
+</div>
+
+</div><!-- /main -->
+
+<!-- SLIP MODAL — renders the SAME receipt HTML that gets printed, via
+     an iframe, so preview and physical print can never diverge. -->
+<div class="mbg" id="slip-modal" style="display:none">
+  <div class="modal" style="max-width:340px;padding:1rem">
+    <div class="mtit"><span class="tl" data-e="Receipt" data-h="रसीद">Receipt</span><button class="mcls" onclick="closeSlip()">✕</button></div>
+    <iframe id="modal-slip" style="width:100%;height:200px;max-height:70vh;border:1px solid var(--bdr);border-radius:8px;background:#fff"></iframe>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:.9rem;flex-wrap:wrap">
+      <button class="btn bp" onclick="printModalSlip()">🖨 <span class="tl" data-e="Print" data-h="प्रिंट">Print</span></button>
+      <button class="btn bo" onclick="closeSlip()"><span class="tl" data-e="Close" data-h="बंद करें">Close</span></button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- CUSTOMER CREDIT PAY MODAL -->
+<div class="mbg" id="cust-pay-modal" style="display:none">
+  <div class="modal" style="max-width:420px">
+    <div class="mtit">
+      <span class="tl" data-e="Pay Supplier Credit" data-h="सप्लायर को भुगतान करें">Pay Supplier Credit</span>
+      <button class="mcls" onclick="closeCustPayModal()">✕</button>
+    </div>
+    <div id="cust-pay-modal-body"></div>
+    <div style="margin-top:.9rem">
+      <label class="tl" data-e="Amount Paying Now (₹)" data-h="अभी दी जाने वाली राशि (₹)">Amount Paying Now (₹)</label>
+      <input type="number" id="cust-pay-amt" min="0.01" step="0.01" style="margin-top:4px" oninput="onCustPayInput()"/>
+      <div id="cust-pay-remaining" style="font-size:12px;color:var(--t2);margin-top:6px"></div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:1rem;flex-wrap:wrap">
+      <button class="btn bp" onclick="confirmCustPay()"><span class="tl" data-e="Confirm Payment" data-h="भुगतान कन्फर्म करें">Confirm Payment</span></button>
+      <button class="btn bo" onclick="closeCustPayModal()"><span class="tl" data-e="Cancel" data-h="रद्द करें">Cancel</span></button>
+    </div>
+  </div>
+</div>
+<div class="mbg" id="settle-modal" style="display:none">
+  <div class="modal" style="max-width:400px">
+    <div class="mtit">
+      <span class="tl" data-e="Settle Udhar Payment" data-h="उधार भुगतान">Settle Udhar Payment</span>
+      <button class="mcls" onclick="closeSettleModal()">✕</button>
+    </div>
+    <div id="settle-modal-body"></div>
+    <div style="margin-top:1rem">
+      <label class="tl" data-e="Amount Received Now (₹)" data-h="अभी मिली राशि (₹)">Amount Received Now (₹)</label>
+      <input type="number" id="settle-amt-input" min="0" step="0.01" style="margin-top:4px" oninput="onSettleAmtInput()"/>
+      <div id="settle-remaining" style="font-size:12px;color:var(--t2);margin-top:6px"></div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:1rem;flex-wrap:wrap">
+      <button class="btn bg" onclick="confirmPartialSettle()"><span class="tl" data-e="Confirm Payment" data-h="भुगतान कन्फर्म करें">Confirm Payment</span></button>
+      <button class="btn bo" onclick="closeSettleModal()"><span class="tl" data-e="Cancel" data-h="रद्द करें">Cancel</span></button>
+    </div>
+  </div>
+</div>
+
+
+<!-- EDIT ORDER MODAL (spec: Order History Edit action) -->
+<div class="mbg" id="edord-modal" style="display:none">
+  <div class="modal" style="max-width:520px">
+    <div class="mtit">
+      <span class="tl" data-e="Edit Order" data-h="ऑर्डर संपादित करें">Edit Order</span>
+      <button class="mcls" onclick="closeEditOrder()">✕</button>
+    </div>
+    <div id="edord-blocked-warn" style="display:none;background:var(--rbg);border:1px solid var(--rb);color:var(--red);border-radius:var(--rs);padding:.7rem .9rem;font-size:12px;margin-bottom:.8rem"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:.7rem">
+      <div style="flex:1;min-width:140px">
+        <label class="tl" data-e="Customer Name" data-h="ग्राहक का नाम">Customer Name</label>
+        <input type="text" id="edord-cname" style="margin-top:4px"/>
+      </div>
+      <div style="flex:1;min-width:120px">
+        <label class="tl" data-e="Phone" data-h="फ़ोन">Phone</label>
+        <input type="text" id="edord-cphone" style="margin-top:4px"/>
+      </div>
+      <div style="min-width:110px">
+        <label class="tl" data-e="Payment" data-h="भुगतान">Payment</label>
+        <select id="edord-udhar" style="margin-top:4px;height:38px">
+          <option value="no">Cash</option>
+          <option value="yes">Udhar</option>
+        </select>
+      </div>
+    </div>
+    <div class="tw">
+    <table style="font-size:12px">
+      <thead><tr><th>Type</th><th>Qty</th><th>Rate</th><th>Amount</th><th></th></tr></thead>
+      <tbody id="edord-items-body"></tbody>
+    </table>
+    </div>
+    <div style="display:flex;gap:8px;align-items:flex-end;margin-top:.7rem;flex-wrap:wrap">
+      <div style="min-width:110px">
+        <label class="tl" data-e="Type" data-h="प्रकार">Type</label>
+        <select id="edord-type" style="margin-top:4px;height:34px">
+          <option value="box">Box</option>
+          <option value="tray">Tray</option>
+          <option value="piece">Piece</option>
+        </select>
+      </div>
+      <div style="width:100px">
+        <label class="tl" data-e="Qty" data-h="मात्रा">Qty</label>
+        <input type="number" id="edord-qty" min="1" step="1" style="margin-top:4px;height:34px"/>
+      </div>
+      <button class="btn bo" onclick="edAddItem()" style="height:34px">+ Add Item</button>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:1rem;padding-top:.7rem;border-top:1px dashed var(--bdr)">
+      <span style="font-weight:700" class="tl" data-e="New Total" data-h="नया कुल">New Total</span>
+      <span id="edord-total" style="font-family:'Baloo 2',cursive;font-size:20px;font-weight:800;color:var(--acc)">₹0.00</span>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:1rem;flex-wrap:wrap">
+      <button class="btn bp" id="edord-save-btn" onclick="edSave()"><span class="tl" data-e="Save Changes" data-h="बदलाव सहेजें">Save Changes</span></button>
+      <button class="btn bo" onclick="closeEditOrder()"><span class="tl" data-e="Cancel" data-h="रद्द करें">Cancel</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT SUPPLIER ENTRY MODAL (spec section 11) -->
+<div class="mbg" id="edcp-modal" style="display:none">
+  <div class="modal" style="max-width:380px">
+    <div class="mtit">
+      <span class="tl" data-e="Edit Purchase Entry" data-h="खरीद एंट्री संपादित करें">Edit Purchase Entry</span>
+      <button class="mcls" onclick="closeEditCustEntry()">✕</button>
+    </div>
+    <div id="edcp-name" style="font-family:'Baloo 2',cursive;font-weight:700;font-size:15px;margin-bottom:.7rem"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <div style="min-width:100px">
+        <label class="tl" data-e="Type" data-h="प्रकार">Type</label>
+        <select id="edcp-type" style="margin-top:4px;height:36px">
+          <option value="box">Box</option><option value="tray">Tray</option><option value="piece">Piece</option>
+        </select>
+      </div>
+      <div style="width:90px">
+        <label class="tl" data-e="Qty" data-h="मात्रा">Qty</label>
+        <input type="number" id="edcp-qty" min="1" max="999999" step="1" style="margin-top:4px;height:36px"/>
+        <div class="tl" style="font-size:10px;color:var(--t3);margin-top:2px" data-e="Max 9,99,999" data-h="अधिकतम 9,99,999">Max 9,99,999</div>
+      </div>
+      <div style="width:110px">
+        <label class="tl" data-e="Rate/egg" data-h="दर/अंडा">Rate/egg</label>
+        <input type="number" id="edcp-rate" min="0.01" max="9999" step="0.01" style="margin-top:4px;height:36px"/>
+        <div class="tl" style="font-size:10px;color:var(--t3);margin-top:2px" data-e="₹0.01 – ₹9,999" data-h="₹0.01 – ₹9,999">₹0.01 – ₹9,999</div>
+      </div>
+      <div style="min-width:100px">
+        <label class="tl" data-e="Payment" data-h="भुगतान">Payment</label>
+        <select id="edcp-credit" style="margin-top:4px;height:36px">
+          <option value="no">Paid</option><option value="yes">Credit</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:1rem;flex-wrap:wrap">
+      <button class="btn bp" onclick="saveEditCustEntry()"><span class="tl" data-e="Save Changes" data-h="बदलाव सहेजें">Save Changes</span></button>
+      <button class="btn bo" onclick="closeEditCustEntry()"><span class="tl" data-e="Cancel" data-h="रद्द करें">Cancel</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT MANUAL UDHAR ENTRY MODAL (spec section 10) -->
+<div class="mbg" id="eduh-modal" style="display:none">
+  <div class="modal" style="max-width:360px">
+    <div class="mtit">
+      <span class="tl" data-e="Edit Udhar Entry" data-h="उधार एंट्री संपादित करें">Edit Udhar Entry</span>
+      <button class="mcls" onclick="closeEditUdharEntry()">✕</button>
+    </div>
+    <div class="auth-field">
+      <label class="tl" data-e="Customer Name" data-h="ग्राहक का नाम">Customer Name</label>
+      <input type="text" id="eduh-cname"/>
+    </div>
+    <div class="auth-field">
+      <label class="tl" data-e="Amount (₹)" data-h="राशि (₹)">Amount (₹)</label>
+      <input type="number" id="eduh-amt" min="0.01" step="0.01"/>
+    </div>
+    <div class="auth-field">
+      <label class="tl" data-e="Note" data-h="नोट">Note</label>
+      <input type="text" id="eduh-note"/>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:.5rem;flex-wrap:wrap">
+      <button class="btn bp" onclick="saveEditUdharEntry()"><span class="tl" data-e="Save Changes" data-h="बदलाव सहेजें">Save Changes</span></button>
+      <button class="btn bo" onclick="closeEditUdharEntry()"><span class="tl" data-e="Cancel" data-h="रद्द करें">Cancel</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT STOCK LOG ENTRY MODAL (spec section 9, manual entries only) -->
+<div class="mbg" id="edsl-modal" style="display:none">
+  <div class="modal" style="max-width:380px">
+    <div class="mtit">
+      <span class="tl" data-e="Edit Stock Entry" data-h="स्टॉक एंट्री संपादित करें">Edit Stock Entry</span>
+      <button class="mcls" onclick="closeEditStockLogEntry()">✕</button>
+    </div>
+    <div class="auth-field">
+      <label class="tl" data-e="Movement" data-h="मूवमेंट">Movement</label>
+      <select id="edsl-type">
+        <option value="IN">IN (Added)</option>
+        <option value="OUT">OUT (Removed)</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:8px">
+      <div class="auth-field" style="flex:1"><label class="tl" data-e="Boxes" data-h="बॉक्स">Boxes</label><input type="number" id="edsl-box" min="0" max="999999" step="1"/></div>
+      <div class="auth-field" style="flex:1"><label class="tl" data-e="Trays" data-h="ट्रे">Trays</label><input type="number" id="edsl-tray" min="0" max="999999" step="1"/></div>
+      <div class="auth-field" style="flex:1"><label class="tl" data-e="Pieces" data-h="पीस">Pieces</label><input type="number" id="edsl-piece" min="0" max="999999" step="1"/></div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:.5rem;flex-wrap:wrap">
+      <button class="btn bp" onclick="saveEditStockLogEntry()"><span class="tl" data-e="Save Changes" data-h="बदलाव सहेजें">Save Changes</span></button>
+      <button class="btn bo" onclick="closeEditStockLogEntry()"><span class="tl" data-e="Cancel" data-h="रद्द करें">Cancel</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- CUSTOM CONFIRM MODAL — replaces window.confirm() (root-cause fix, see confirmDialog.js) -->
+<div class="mbg" id="confirm-modal" style="display:none">
+  <div class="modal" style="max-width:380px">
+    <p id="confirm-modal-msg" style="font-size:14px;color:var(--t1);line-height:1.5;white-space:pre-line;margin-bottom:1.2rem"></p>
+    <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">
+      <button class="btn bo" id="confirm-modal-cancel" onclick="closeConfirmModal()">Cancel</button>
+      <button class="btn bp" id="confirm-modal-ok" onclick="_resolveConfirm(true)">OK</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- /#app-shell -->
+
+<!-- ══════════════════════════════════════════════════════════
+     SCRIPTS — plain (non-module) scripts sharing one global
+     scope, loaded in dependency order. No bundler required.
+     ══════════════════════════════════════════════════════════ -->
+
+<!-- Vendored Supabase SDK (local file — no CDN/runtime network dependency) -->
+<script src="js/vendor/supabase-js.umd.js"></script>
+
+<!-- Config + global state -->
+<script src="js/config.js"></script>
+<script src="js/state.js"></script>
+
+<!-- Utilities -->
+<script src="js/utils/format.js"></script>
+<script src="js/utils/confirmDialog.js"></script>
+<script src="js/utils/i18n.js"></script>
+<script src="js/utils/uuid.js"></script>
+
+<!-- Local-first storage -->
+<script src="js/storage/localStore.js"></script>
+<script src="js/storage/accountStore.js"></script>
+<script src="js/storage/backup.js"></script>
+
+<!-- Cloud sync (background only — never blocks billing) -->
+<script src="js/sync/syncQueue.js"></script>
+<script src="js/sync/syncService.js"></script>
+<script src="js/sync/legacyMigration.js"></script>
+
+<!-- Auth -->
+<script src="js/auth/authService.js"></script>
+<script src="js/auth/authUI.js"></script>
+
+<!-- Business modules -->
+<script src="js/billing/rates.js"></script>
+<script src="js/billing/draft.js"></script>
+<script src="js/billing/keyboardFlow.js"></script>
+<script src="js/stock/stock.js"></script>
+<script src="js/history/history.js"></script>
+<script src="js/udhar/udhar.js"></script>
+<script src="js/reports/reports.js"></script>
+<script src="js/history/orderEdit.js"></script>
+<script src="js/customers/ledger.js"></script>
+<script src="js/settings/settings.js"></script>
+
+<!-- Printing -->
+<script src="js/printing/printService.js"></script>
+<script src="js/printing/printerSettings.js"></script>
+
+<!-- Keyboard-first billing -->
+<script src="js/keyboard/shortcuts.js"></script>
+
+<!-- Navigation + bootstrap (last) -->
+<script src="js/app/navigation.js"></script>
+<script src="js/app/init.js"></script>
+
+</body>
+</html>

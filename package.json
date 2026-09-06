@@ -1,0 +1,52 @@
+{
+  "name": "anda-vyapar",
+  "version": "2.0.0",
+  "description": "Anda Vyapar - Egg Business Manager",
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder",
+    "dist-win": "electron-builder --win",
+    "setup": "node scripts/install.js",
+    "postinstall": "node scripts/verify-electron.js",
+    "verify:electron": "node scripts/verify-electron.js"
+  },
+  "build": {
+    "appId": "com.andavyapar.app",
+    "productName": "Anda Vyapar",
+    "copyright": "Anda Vyapar Egg Business Manager",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "electron/**/*",
+      "src/**/*",
+      "icon.png",
+      ".env"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Anda Vyapar",
+      "deleteAppDataOnUninstall": false,
+      "installerSidebar": "icon.png"
+    }
+  },
+  "devDependencies": {
+    "electron": "^28.3.3",
+    "electron-builder": "^24.13.3"
+  }
+}
