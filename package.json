@@ -9,7 +9,8 @@
     "dist-win": "electron-builder --win",
     "setup": "node scripts/install.js",
     "postinstall": "node scripts/verify-electron.js",
-    "verify:electron": "node scripts/verify-electron.js"
+    "verify:electron": "node scripts/verify-electron.js",
+    "build:web": "node scripts/build-web.js"
   },
   "build": {
     "appId": "com.andavyapar.app",
