@@ -1,0 +1,5 @@
+{
+  "buildCommand": "npm run build:web",
+  "installCommand": "npm install --ignore-scripts",
+  "outputDirectory": "web-dist"
+}
