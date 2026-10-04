@@ -28,5 +28,34 @@ if (fs.existsSync(outDir)) {
 
 copyRecursive(srcDir, outDir);
 
+// Inject Supabase configuration into the browser build.
+const indexPath = path.join(outDir, "index.html");
+
+let html = fs.readFileSync(indexPath, "utf8");
+
+const supabaseUrl = process.env.SUPABASE_URL || "";
+const supabasePublishableKey =
+  process.env.SUPABASE_PUBLISHABLE_KEY || "";
+
+const configScript = `
+<script>
+window.__ANDA_CONFIG__ = {
+  SUPABASE_URL: ${JSON.stringify(supabaseUrl)},
+  SUPABASE_PUBLISHABLE_KEY: ${JSON.stringify(supabasePublishableKey)}
+};
+</script>
+`;
+
+html = html.replace("</head>", `${configScript}</head>`);
+
+fs.writeFileSync(indexPath, html, "utf8");
+
 console.log("Anda Vyapar web build created successfully.");
 console.log(`Output: ${outDir}`);
+
+if (!supabaseUrl || !supabasePublishableKey) {
+  console.warn(
+    "Warning: Supabase environment variables are not set. " +
+    "The web build will run in local-only mode."
+  );
+}
